@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI病例关键词指南提示工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #F0F8FF; /* Alice Blue - Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: white;
+            padding: 1.5rem 2rem; /* Increased padding */
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 600px;
+            margin-top: 1rem;
+        }
+        .tool-title {
+            font-size: 1.6rem; /* Slightly larger title */
+            font-weight: 700;
+            color: #0077B6; /* Dark Blue */
+            margin-bottom: 0.75rem;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tool-title-icon {
+            font-size: 1.8rem; /* Larger icon */
+            margin-right: 0.5rem;
+        }
+        .description {
+            font-size: 0.95rem; /* Slightly larger description */
+            color: #4A5568; /* Cool Gray */
+            margin-bottom: 1.5rem;
+            text-align: left;
+            line-height: 1.6;
+        }
+        input[type="text"] {
+            border: 1px solid #90E0EF; /* Light Blue border */
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 1rem; /* Larger font for input */
+            margin-bottom: 1rem; /* Spacing after input */
+        }
+        .gemini-button {
+            background-color: #0077B6; /* Dark Blue */
+            color: white;
+            padding: 0.75rem 1.5rem; /* More padding for button */
+            border-radius: 0.375rem;
+            transition: background-color 0.3s;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            width: 100%; /* Full width button */
+        }
+        .gemini-button:hover {
+            background-color: #005A8D; /* Darker Blue */
+        }
+        .ai-output {
+            background-color: #F8F9FA; /* Very light gray for output */
+            border: 1px solid #B0E0E6; /* Powder blue border */
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-top: 1.5rem; /* Spacing before output */
+            min-height: 180px; /* Increased min-height */
+            white-space: pre-wrap; 
+            font-size: 0.9rem;
+            color: #333;
+            overflow-y: auto;
+            max-height: 50vh; /* Max height for scrollability */
+            line-height: 1.7;
+        }
+        .footer-note {
+            font-size: 0.75rem;
+            color: #718096; /* Gray */
+            text-align: center;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="tool-title">
+            <span class="tool-title-icon">✨</span>AI病例关键词指南提示
+        </h2>
+        <p class="description">请输入与糖尿病足病例相关的关键词（例如：足底溃疡，红肿热痛，ABI低，骨质破坏等），AI将根据最新的指南信息，为您提供相关的诊疗考虑方向和要点提示。</p>
+        
+        <input type="text" id="caseKeywordsInput" placeholder="例如：足底溃疡 红肿 ABI低">
+        <button id="getCaseInsightsBtn" class="gemini-button">获取相关指南提示</button>
+        
+        <div id="caseInsightsOutput" class="ai-output">请输入关键词，然后点击上方按钮获取AI提示。</div>
+
+        <p class="footer-note">本工具提供的信息仅供参考，不构成医疗建议，具体诊疗请遵循专业医师指导。</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const caseKeywordsInput = document.getElementById('caseKeywordsInput');
+            const getCaseInsightsBtn = document.getElementById('getCaseInsightsBtn');
+            const caseInsightsOutputEl = document.getElementById('caseInsightsOutput');
+
+            const apiKey = ""; // Intentionally empty, will be handled by the environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const infographicSummaryContext = `
+                背景信息：这是一份关于2023-2025年糖尿病足管理指南核心变革的信息图。主要内容包括：
+                1. IWGDF 2023年更新：7份循证指南，新增CNO指南，与IDSA/ESVS/SVS合作，GRADE方法。
+                2. ADA 2023-2025年进展：年度更新，TOT的A级推荐，伊普斯维奇试验，强调戒烟和手术。
+                3. 诊断进展：
+                    - 筛查与预防：伊普斯维奇试验，皮肤温度监测(温差 >2.2°C 需警惕)。
+                    - DFI/DFO：临床诊断标准（≥2项炎症体征，炎症可发生在足部任何部位），常规培养优于分子技术，MRI用于可疑DFO。
+                    - PAD：临床评估+多普勒+ABI/TBI，WIfI分类。
+                    - CNO：高度怀疑指征（单侧红肿热痛），X线首选，MRI用于X线阴性但高度怀疑者。
+                4. 治疗进展：
+                    - 减压：不可移除膝下装置（如TCC）为首选，特定足趾溃疡推荐数字屈肌腱切断术。
+                    - 感染控制：DFI疗程1-2周（严重可至3-4周），DFO未手术6周。特定前足DFO可单纯抗生素。
+                    - PAD血运重建：特定情况膝下旁路移植优先于腔内治疗。
+                    - CNO管理：首选不可移除膝下装置减压，强烈不推荐多种药物治疗（双膦酸盐、降钙素等）。
+                    - 辅助治疗：IWGDF有条件推荐辛糖酯敷料、HBO、TOT等；ADA持续A级推荐TOT。
+            `;
+
+            async function callGeminiAPI(promptText, outputElement) {
+                outputElement.textContent = 'AI正在思考，请稍候... ✨';
+                outputElement.style.color = '#0077B6'; // Dark Blue for loading text
+                getCaseInsightsBtn.disabled = true;
+                getCaseInsightsBtn.style.opacity = '0.7';
+
+                const payload = {
+                    contents: [{ role: "user", parts: [{ text: promptText }] }]
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error("API Error:", errorData);
+                        throw new Error(`API请求失败，状态码: ${response.status}. ${errorData?.error?.message || '未知错误'}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const text = result.candidates[0].content.parts[0].text;
+                        outputElement.textContent = text;
+                    } else {
+                        console.error("Unexpected API response structure:", result);
+                        outputElement.textContent = '未能从AI获取有效回复，请检查API响应或稍后再试。';
+                    }
+                } catch (error) {
+                    console.error('调用Gemini API时出错:', error);
+                    outputElement.textContent = `AI调用出错: ${error.message} 请检查网络连接或稍后再试。`;
+                } finally {
+                    outputElement.style.color = '#333'; // Reset text color
+                    getCaseInsightsBtn.disabled = false;
+                    getCaseInsightsBtn.style.opacity = '1';
+                }
+            }
+
+            getCaseInsightsBtn.addEventListener('click', () => {
+                const keywords = caseKeywordsInput.value.trim();
+                if (!keywords) {
+                    caseInsightsOutputEl.textContent = '请输入病例相关的关键词，例如“足底溃疡 红肿”。';
+                    return;
+                }
+
+                const prompt = `${infographicSummaryContext}
+                
+                临床医生正在处理一个糖尿病足病例，并提供了以下关键词：“${keywords}”。
+                请根据上述指南摘要信息，指出与这些关键词最相关的指南要点或诊疗方向，并简要说明其相关性。
+                请用中文回答，并以清晰、分点的形式呈现。不要提供具体的医疗建议，而是提示应关注的指南内容。回答时，请直接给出相关的指南要点和解释，不需要重复背景信息或问题。`;
+
+                callGeminiAPI(prompt, caseInsightsOutputEl);
+            });
+
+            caseKeywordsInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Prevent form submission if it's in a form
+                    getCaseInsightsBtn.click(); // Trigger button click
+                }
+            });
+        });
+    </script>
+    </body>
+</html>
